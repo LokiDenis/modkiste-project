@@ -1,99 +1,73 @@
 const Discord = require('discord.js');
-
 const client = new Discord.Client();
-
-const { token, default_prefix } = require('./config.json');
-
-const { readdirSync } = require('fs');
-
-const { join } = require('path');
+const { token } = require("./config.json");
+const fs = require('fs');
 
 const config = require('./config.json');
 client.config = config;
 
-const db = require('quick.db');
-
-
-
+// Init discord giveaways
 const { GiveawaysManager } = require('discord-giveaways');
-
 client.giveawaysManager = new GiveawaysManager(client, {
-    storage: "./giveaways.json",
-    updateCountdownEvery: 5000,
+    storage: "./database.json",
+    updateCountdownEvery: 3000,
     default: {
         botsCanWin: false,
-        exemptPermissions: [],
         embedColor: "#FF0000",
         reaction: "🎉"
     }
 });
+// We now have a client.giveawaysManager property to manage our giveaways!
 
-client.commands= new Discord.Collection();
-//You can change the prefix if you like. It doesn't have to be ! or ;
-const commandFiles = readdirSync(join(__dirname, "commands")).filter(file => file.endsWith(".js"));
-
-for (const file of commandFiles) {
-    const command = require(join(__dirname, "commands", `${file}`));
-    client.commands.set(command.name, command);
-}
-
-
-client.on("error", console.error);
-
-client.on('ready', () => {
-    console.log('I am ready');
-    client.user.setActivity(`If I'm online, you might be recorded`)
+/* Load all events */
+fs.readdir("./events/", (_err, files) => {
+    files.forEach((file) => {
+        if (!file.endsWith(".js")) return;
+        const event = require(`./events/${file}`);
+        let eventName = file.split(".")[0];
+        console.log(`👌 Event loaded: ${eventName}`);
+        client.on(eventName, event.bind(null, client));
+        require(`./events/${file}`);
+    });
 });
 
+client.commands = new Discord.Collection();
 
-let stats = {
-    serverID: '<ID>',
-    total: "<ID>",
-    member: "<ID>",
-    bots: "<ID>"
-}
+/* Load all commands */
+fs.readdir("./commands/", (_err, files) => {
+    files.forEach((file) => {
+        if (!file.endsWith(".js")) return;
+        let props = require(`./commands/${file}`);
+        let commandName = file.split(".")[0];
+        client.commands.set(commandName, props);
+        console.log(`👌 Command loaded: ${commandName}`);
+    });
+});
 
+/* Load Fun commands */
 
+fs.readdir("./fun/", (_err, files) => {
 
-client.on('guildMemberAdd', member => {
-    if(member.guild.id !== stats.serverID) return;
-    client.channels.cache.get(stats.total).setName(`Total Users: ${member.guild.memberCount}`);
-    client.channels.cache.get(stats.member).setName(`Members: ${member.guild.members.cache.filter(m => !m.user.bot).size}`);
-    client.channels.cache.get(stats.bots).setName(`Bots: ${member.guild.members.cache.filter(m => m.user.bot).size}`);
-})
+    files.forEach((file) => {
+        if (!file.endsWith(".js")) return;
+        let props = require(`./fun/${file}`);
+        let commandName = file.split(".")[0];
+        client.commands.set(commandName, props);
+        console.log(`👌 Fun loaded: ${commandName}`);
+    });
+});
 
-client.on('guildMemberRemove', member => {
-    if(member.guild.id !== stats.serverID) return;
-    client.channels.cache.get(stats.total).setName(`Total Users: ${member.guild.memberCount}`);
-    client.channels.cache.get(stats.member).setName(`Members: ${member.guild.members.cache.filter(m => !m.user.bot).size}`);
-    client.channels.cache.get(stats.bots).setName(`Bots: ${member.guild.members.cache.filter(m => m.user.bot).size}`);
+/* Load handlers commands */
 
-    
-})
+fs.readdir("./handlers/", (_err, files) => {
 
-client.on("message", async message => {
+    files.forEach((file) => {
+        if (!file.endsWith(".js")) return;
+        let props = require(`./handlers/${file}`);
+        let commandName = file.split(".")[0];
+        client.commands.set(commandName, props);
+        console.log(`👌 handlers loaded: ${commandName}`);
+    });
+});
 
-    if(message.author.bot) return;
-    if(message.channel.type === 'dm') return;
-
-    let prefix = await db.get(`prefix_${message.guild.id}`);
-    if(prefix === null) prefix = default_prefix;
-
-    if(message.content.startsWith(prefix)) {
-        const args = message.content.slice(prefix.length).trim().split(/ +/g);
-
-        const command = args.shift().toLowerCase();
-
-        if(!client.commands.has(command)) return;
-
-
-        try {
-            client.commands.get(command).run(client, message, args);
-
-        } catch (error){
-            console.error(error);
-        }
-    }
-})
-
-client.login(token);
+client.login(config.TOKEN);
