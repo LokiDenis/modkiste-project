@@ -5,7 +5,6 @@ const fs = require('fs');
 
 const config = require('./config.json');
 client.config = config;
-client.login(process.env.BOT_TOKEN)
 
 // Init discord giveaways
 const { GiveawaysManager } = require('discord-giveaways');
