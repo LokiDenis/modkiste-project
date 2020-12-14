@@ -1,6 +1,6 @@
 {
-  "TOKEN": "NzYzMDgyMTA5MTExNTAwODIw.X3yhmA.Ecwredf7aLuyRmcg6LY3yo-bMBY",
-  "default_prefix": ">",
-  "ownerID": "614122130795266048",
+  "TOKEN": "your token",
+  "default_prefix": "your prefix",
+  "ownerID": "your ID",
   "hostedBy": true
 }
